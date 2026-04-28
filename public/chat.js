@@ -15,7 +15,7 @@ let chatHistory = [
 	{
 		role: "assistant",
 		content:
-			"Hello! I'm an LLM chat app powered by Cloudflare Workers AI. How can I help you today?",
+			"¡Hola! Soy el asistente virtual de Amealcom 👋\nEstoy aquí para ayudarte con tu servicio de internet, reportes de fallas, pagos o cobertura.\n\n¿En qué puedo ayudarte hoy?",
 	},
 ];
 let isProcessing = false;
