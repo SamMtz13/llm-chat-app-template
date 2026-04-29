@@ -1,19 +1,14 @@
 /**
  * LLM Chat Application Template
- *
- * A simple chat application using Cloudflare Workers AI.
- * This template demonstrates how to implement an LLM-powered chat interface with
- * streaming responses using Server-Sent Events (SSE).
- *
- * @license MIT
  */
-import { Env, ChatMessage } from "./types";
 
-// Model ID for Workers AI model
-// https://developers.cloudflare.com/workers-ai/models/
+import { Env, ChatMessage } from "./types";
+import { KNOWLEDGE_BASE } from "./knowledge/amealcom";
+
+// Modelo
 const MODEL_ID = "@cf/meta/llama-3.1-8b-instruct-fp8";
 
-// Default system prompt
+// Prompt principal
 const SYSTEM_PROMPT = `
 Eres el asistente virtual de Amealcom, una empresa proveedora de internet en Amealco, Querétaro.
 
@@ -40,10 +35,8 @@ No inventes precios, promociones, zonas de cobertura, tiempos de instalación ni
 
 Si no tienes suficiente información, pide los datos necesarios o indica que un asesor de Amealcom puede darle seguimiento.
 `;
+
 export default {
-  /**
-   * Main request handler for the Worker
-   */
   async fetch(
     request: Request,
     env: Env,
@@ -51,61 +44,57 @@ export default {
   ): Promise<Response> {
     const url = new URL(request.url);
 
-    // Handle static assets (frontend)
+    // Frontend
     if (url.pathname === "/" || !url.pathname.startsWith("/api/")) {
       return env.ASSETS.fetch(request);
     }
 
-    // API Routes
+    // API
     if (url.pathname === "/api/chat") {
-      // Handle POST requests for chat
       if (request.method === "POST") {
         return handleChatRequest(request, env);
       }
-
-      // Method not allowed for other request types
       return new Response("Method not allowed", { status: 405 });
     }
 
-    // Handle 404 for unmatched routes
     return new Response("Not found", { status: 404 });
   },
 } satisfies ExportedHandler<Env>;
 
 /**
- * Handles chat API requests
+ * Chat handler
  */
 async function handleChatRequest(
   request: Request,
   env: Env,
 ): Promise<Response> {
   try {
-    // Parse JSON request body
     const { messages = [] } = (await request.json()) as {
       messages: ChatMessage[];
     };
 
-    // Add system prompt if not present
+    // 🔥 AQUI METEMOS TODO (prompt + knowledge)
     if (!messages.some((msg) => msg.role === "system")) {
-      messages.unshift({ role: "system", content: SYSTEM_PROMPT });
+      const FINAL_SYSTEM_PROMPT = `
+${SYSTEM_PROMPT}
+
+====================
+BASE DE CONOCIMIENTO AMEALCOM
+====================
+${KNOWLEDGE_BASE}
+`;
+
+      messages.unshift({
+        role: "system",
+        content: FINAL_SYSTEM_PROMPT,
+      });
     }
 
-    const stream = await env.AI.run(
-      MODEL_ID,
-      {
-        messages,
-        max_tokens: 1024,
-        stream: true,
-      },
-      {
-        // Uncomment to use AI Gateway
-        // gateway: {
-        //   id: "YOUR_GATEWAY_ID", // Replace with your AI Gateway ID
-        //   skipCache: false,      // Set to true to bypass cache
-        //   cacheTtl: 3600,        // Cache time-to-live in seconds
-        // },
-      },
-    );
+    const stream = await env.AI.run(MODEL_ID, {
+      messages,
+      max_tokens: 1024,
+      stream: true,
+    });
 
     return new Response(stream, {
       headers: {
@@ -115,9 +104,10 @@ async function handleChatRequest(
       },
     });
   } catch (error) {
-    console.error("Error processing chat request:", error);
+    console.error("Error:", error);
+
     return new Response(
-      JSON.stringify({ error: "Failed to process request" }),
+      JSON.stringify({ error: "Error procesando la solicitud" }),
       {
         status: 500,
         headers: { "content-type": "application/json" },
