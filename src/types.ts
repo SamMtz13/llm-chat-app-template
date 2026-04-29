@@ -3,20 +3,13 @@
  */
 
 export interface Env {
-	/**
-	 * Binding for the Workers AI API.
-	 */
 	AI: Ai;
-
-	/**
-	 * Binding for static assets.
-	 */
 	ASSETS: { fetch: (request: Request) => Promise<Response> };
+	TELEGRAM_BOT_TOKEN?: string;
+	TELEGRAM_CHAT_ID?: string;
+	DB?: D1Database;
 }
 
-/**
- * Represents a chat message.
- */
 export interface ChatMessage {
 	role: "system" | "user" | "assistant";
 	content: string;
