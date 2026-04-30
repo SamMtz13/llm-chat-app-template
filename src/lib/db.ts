@@ -1,10 +1,3 @@
-// TODO: Agregar en wrangler.jsonc:
-// "d1_databases": [{ "binding": "DB", "database_name": "amealcom", "database_id": "TU_ID" }]
-// Variables de entorno requeridas en el dashboard de Cloudflare:
-// TELEGRAM_BOT_TOKEN
-// TELEGRAM_CHAT_ID
-// ADMIN_PASSWORD
-
 import { Ticket } from "./tickets";
 import { Intent, Emotion, Priority } from "./detector";
 import { Env } from "../types";
@@ -14,7 +7,10 @@ export async function saveConversation(
   conversationId: string,
   metadata: object,
 ): Promise<void> {
-  // D1: INSERT INTO conversations (id, metadata, created_at) VALUES (?, ?, ?)
+  if (!env.DB) return;
+  await env.DB.prepare(
+    "INSERT OR IGNORE INTO conversations (id, metadata, created_at) VALUES (?, ?, ?)",
+  ).bind(conversationId, JSON.stringify(metadata), new Date().toISOString()).run();
 }
 
 export async function saveMessage(
@@ -29,11 +25,44 @@ export async function saveMessage(
     ticketCreated?: boolean;
   },
 ): Promise<void> {
-  // D1:
-  // INSERT INTO messages (id, conversation_id, role, content, detected_intent, detected_emotion, priority, ticket_created, created_at)
-  // VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  if (!env.DB) return;
+  // Ensure conversation row exists before inserting message (FK constraint)
+  await env.DB.prepare(
+    "INSERT OR IGNORE INTO conversations (id, metadata, created_at) VALUES (?, ?, ?)",
+  ).bind(conversationId, "{}", new Date().toISOString()).run();
+
+  await env.DB.prepare(
+    `INSERT INTO messages
+       (id, conversation_id, role, content,
+        detected_intent, detected_emotion, priority, ticket_created, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).bind(
+    crypto.randomUUID(),
+    conversationId,
+    role,
+    content,
+    metadata?.detectedIntent ?? null,
+    metadata?.detectedEmotion ?? null,
+    metadata?.priority ?? null,
+    metadata?.ticketCreated ? 1 : 0,
+    new Date().toISOString(),
+  ).run();
 }
 
 export async function saveTicket(env: Env, ticket: Ticket): Promise<void> {
-  // D1: INSERT INTO tickets (id, conversation_id, intent, emotion, priority, status, description, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  if (!env.DB) return;
+  await env.DB.prepare(
+    `INSERT INTO tickets
+       (id, conversation_id, intent, emotion, priority, status, description, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).bind(
+    ticket.id,
+    ticket.conversationId,
+    ticket.intent,
+    ticket.emotion,
+    ticket.priority,
+    ticket.status,
+    ticket.description,
+    ticket.createdAt,
+  ).run();
 }

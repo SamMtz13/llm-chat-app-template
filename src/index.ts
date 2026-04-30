@@ -65,7 +65,7 @@ export default {
     // Admin API (protegida — va antes del bloque de assets)
     if (url.pathname.startsWith("/api/admin/")) {
       if (!isAuthorized(request, env)) return unauthorized();
-      return handleAdminRequest(request, url);
+      return handleAdminRequest(request, url, env);
     }
 
     // Frontend (incluye /admin que es servido como admin.html por ASSETS)
@@ -89,45 +89,102 @@ export default {
 // Admin handler
 // ---------------------------------------------------------------------------
 
-function handleAdminRequest(_request: Request, url: URL): Response {
+async function handleAdminRequest(_request: Request, url: URL, env: Env): Promise<Response> {
   if (url.pathname === "/api/admin/conversations") {
-    // TODO: reemplazar con query D1 cuando DB esté configurado
-    const result = mockConversations.map((conv) => {
-      const msgs = mockMessages
-        .filter((m) => m.conversationId === conv.id)
-        .sort(
-          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-        );
+    if (!env.DB) {
+      // Fallback: mock data cuando DB no está configurado
+      const result = mockConversations.map((conv) => {
+        const msgs = mockMessages
+          .filter((m) => m.conversationId === conv.id)
+          .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        const lastUserMsg = [...msgs].reverse().find((m) => m.role === "user");
+        return {
+          id: conv.id,
+          createdAt: conv.createdAt,
+          detectedIntent: conv.detectedIntent,
+          detectedEmotion: conv.detectedEmotion,
+          priority: conv.priority,
+          hasTicket: conv.hasTicket,
+          messageCount: msgs.length,
+          lastMessage: (lastUserMsg?.content ?? "").slice(0, 60),
+          messages: msgs.map((m) => ({ role: m.role, content: m.content, createdAt: m.createdAt })),
+        };
+      });
+      return new Response(JSON.stringify(result), { headers: { "content-type": "application/json" } });
+    }
+
+    type DbConv = { id: string; created_at: string };
+    type DbMsg = {
+      conversation_id: string; role: string; content: string;
+      detected_intent: string | null; detected_emotion: string | null;
+      priority: string | null; created_at: string;
+    };
+    type DbTicketRef = { conversation_id: string };
+
+    const [convsResult, msgsResult, ticketsResult] = await Promise.all([
+      env.DB.prepare("SELECT id, created_at FROM conversations ORDER BY created_at DESC").all(),
+      env.DB.prepare("SELECT conversation_id, role, content, detected_intent, detected_emotion, priority, created_at FROM messages ORDER BY conversation_id, created_at ASC").all(),
+      env.DB.prepare("SELECT DISTINCT conversation_id FROM tickets").all(),
+    ]);
+
+    const conversations = convsResult.results as DbConv[];
+    const allMsgs = msgsResult.results as DbMsg[];
+    const ticketConvIds = new Set((ticketsResult.results as DbTicketRef[]).map((t) => t.conversation_id));
+
+    const msgsByConv = new Map<string, DbMsg[]>();
+    for (const msg of allMsgs) {
+      if (!msgsByConv.has(msg.conversation_id)) msgsByConv.set(msg.conversation_id, []);
+      msgsByConv.get(msg.conversation_id)!.push(msg);
+    }
+
+    const result = conversations.map((conv) => {
+      const msgs = msgsByConv.get(conv.id) ?? [];
       const lastUserMsg = [...msgs].reverse().find((m) => m.role === "user");
       return {
         id: conv.id,
-        createdAt: conv.createdAt,
-        detectedIntent: conv.detectedIntent,
-        detectedEmotion: conv.detectedEmotion,
-        priority: conv.priority,
-        hasTicket: conv.hasTicket,
+        createdAt: conv.created_at,
+        detectedIntent: lastUserMsg?.detected_intent ?? "general",
+        detectedEmotion: lastUserMsg?.detected_emotion ?? "neutral",
+        priority: lastUserMsg?.priority ?? "baja",
+        hasTicket: ticketConvIds.has(conv.id),
         messageCount: msgs.length,
         lastMessage: (lastUserMsg?.content ?? "").slice(0, 60),
-        messages: msgs.map((m) => ({
-          role: m.role,
-          content: m.content,
-          createdAt: m.createdAt,
-        })),
+        messages: msgs.map((m) => ({ role: m.role, content: m.content, createdAt: m.created_at })),
       };
     });
-    return new Response(JSON.stringify(result), {
-      headers: { "content-type": "application/json" },
-    });
+
+    return new Response(JSON.stringify(result), { headers: { "content-type": "application/json" } });
   }
 
   if (url.pathname === "/api/admin/tickets") {
-    // TODO: reemplazar con query D1 cuando DB esté configurado
-    const sorted = [...mockTickets].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-    return new Response(JSON.stringify(sorted), {
-      headers: { "content-type": "application/json" },
-    });
+    if (!env.DB) {
+      const sorted = [...mockTickets].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+      return new Response(JSON.stringify(sorted), { headers: { "content-type": "application/json" } });
+    }
+
+    type DbTicket = {
+      id: string; conversation_id: string; intent: string; emotion: string;
+      priority: string; status: string; description: string; created_at: string;
+    };
+
+    const result = await env.DB.prepare(
+      "SELECT id, conversation_id, intent, emotion, priority, status, description, created_at FROM tickets ORDER BY created_at DESC",
+    ).all();
+
+    const tickets = (result.results as DbTicket[]).map((t) => ({
+      id: t.id,
+      conversationId: t.conversation_id,
+      intent: t.intent,
+      emotion: t.emotion,
+      priority: t.priority,
+      status: t.status,
+      description: t.description,
+      createdAt: t.created_at,
+    }));
+
+    return new Response(JSON.stringify(tickets), { headers: { "content-type": "application/json" } });
   }
 
   return new Response("Not found", { status: 404 });

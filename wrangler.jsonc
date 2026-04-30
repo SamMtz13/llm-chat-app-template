@@ -18,5 +18,12 @@
 	"ai": {
 		"binding": "AI"
 	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "amealcom",
+			"database_id": "744372ea-7a4e-4f4a-9a68-9ddb56c919ff"
+		}
+	],
 	"upload_source_maps": true
 }
