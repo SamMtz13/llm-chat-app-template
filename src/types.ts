@@ -8,6 +8,7 @@ export interface Env {
 	TELEGRAM_BOT_TOKEN?: string;
 	TELEGRAM_CHAT_ID?: string;
 	DB?: D1Database;
+	ADMIN_PASSWORD?: string;
 }
 
 export interface ChatMessage {

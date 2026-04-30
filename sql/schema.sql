@@ -9,11 +9,15 @@ CREATE TABLE IF NOT EXISTS conversations (
 CREATE INDEX IF NOT EXISTS idx_conversations_created_at ON conversations (created_at);
 
 CREATE TABLE IF NOT EXISTS messages (
-  id              TEXT PRIMARY KEY,
-  conversation_id TEXT NOT NULL,
-  role            TEXT NOT NULL,
-  content         TEXT NOT NULL,
-  created_at      TEXT NOT NULL,
+  id               TEXT PRIMARY KEY,
+  conversation_id  TEXT NOT NULL,
+  role             TEXT NOT NULL,
+  content          TEXT NOT NULL,
+  detected_intent  TEXT,
+  detected_emotion TEXT,
+  priority         TEXT,
+  ticket_created   INTEGER DEFAULT 0,  -- 0 = false, 1 = true en SQLite
+  created_at       TEXT NOT NULL,
   FOREIGN KEY (conversation_id) REFERENCES conversations (id)
 );
 

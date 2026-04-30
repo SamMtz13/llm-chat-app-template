@@ -8,6 +8,8 @@ import { detectIntent, detectEmotion, calculatePriority } from "./lib/detector";
 import { shouldCreateTicket, createTicket } from "./lib/tickets";
 import { sendTelegramNotification } from "./lib/telegram";
 import { saveMessage, saveTicket } from "./lib/db";
+import { isAuthorized } from "./lib/auth";
+import { mockConversations, mockMessages, mockTickets } from "./lib/mockData";
 // FUTURO: if (url.pathname === "/api/whatsapp") return handleWhatsAppWebhook(request, env)
 
 // Modelo
@@ -45,6 +47,11 @@ Si alguien reporta una falla, pide:
 Si no tienes suficiente información, pide los datos necesarios o indica que un asesor de Amealcom puede darle seguimiento.
 `;
 
+const UNAUTHORIZED = new Response(JSON.stringify({ error: "No autorizado" }), {
+  status: 401,
+  headers: { "content-type": "application/json" },
+});
+
 export default {
   async fetch(
     request: Request,
@@ -53,12 +60,18 @@ export default {
   ): Promise<Response> {
     const url = new URL(request.url);
 
-    // Frontend
+    // Admin API (protegida — va antes del bloque de assets)
+    if (url.pathname.startsWith("/api/admin/")) {
+      if (!isAuthorized(request, env)) return UNAUTHORIZED.clone();
+      return handleAdminRequest(request, url);
+    }
+
+    // Frontend (incluye /admin que es servido como admin.html por ASSETS)
     if (url.pathname === "/" || !url.pathname.startsWith("/api/")) {
       return env.ASSETS.fetch(request);
     }
 
-    // API
+    // Chat API
     if (url.pathname === "/api/chat") {
       if (request.method === "POST") {
         return handleChatRequest(request, env, ctx);
@@ -70,9 +83,58 @@ export default {
   },
 } satisfies ExportedHandler<Env>;
 
-/**
- * Chat handler
- */
+// ---------------------------------------------------------------------------
+// Admin handler
+// ---------------------------------------------------------------------------
+
+function handleAdminRequest(_request: Request, url: URL): Response {
+  if (url.pathname === "/api/admin/conversations") {
+    // TODO: reemplazar con query D1 cuando DB esté configurado
+    const result = mockConversations.map((conv) => {
+      const msgs = mockMessages
+        .filter((m) => m.conversationId === conv.id)
+        .sort(
+          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        );
+      const lastUserMsg = [...msgs].reverse().find((m) => m.role === "user");
+      return {
+        id: conv.id,
+        createdAt: conv.createdAt,
+        detectedIntent: conv.detectedIntent,
+        detectedEmotion: conv.detectedEmotion,
+        priority: conv.priority,
+        hasTicket: conv.hasTicket,
+        messageCount: msgs.length,
+        lastMessage: (lastUserMsg?.content ?? "").slice(0, 60),
+        messages: msgs.map((m) => ({
+          role: m.role,
+          content: m.content,
+          createdAt: m.createdAt,
+        })),
+      };
+    });
+    return new Response(JSON.stringify(result), {
+      headers: { "content-type": "application/json" },
+    });
+  }
+
+  if (url.pathname === "/api/admin/tickets") {
+    // TODO: reemplazar con query D1 cuando DB esté configurado
+    const sorted = [...mockTickets].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+    return new Response(JSON.stringify(sorted), {
+      headers: { "content-type": "application/json" },
+    });
+  }
+
+  return new Response("Not found", { status: 404 });
+}
+
+// ---------------------------------------------------------------------------
+// Chat handler
+// ---------------------------------------------------------------------------
+
 async function handleChatRequest(
   request: Request,
   env: Env,
@@ -95,16 +157,24 @@ async function handleChatRequest(
     const intent = detectIntent(lastUserMessage);
     const emotion = detectEmotion(lastUserMessage);
     const priority = calculatePriority(intent, emotion);
+    const ticketCreated = shouldCreateTicket(intent, emotion);
 
     // Crear ticket si aplica (no bloquea el stream)
-    if (shouldCreateTicket(intent, emotion)) {
+    if (ticketCreated) {
       const ticket = createTicket(conversationId, intent, emotion, priority, lastUserMessage);
       ctx.waitUntil(saveTicket(env, ticket));
       ctx.waitUntil(sendTelegramNotification(ticket, env));
     }
 
-    // Guardar mensaje del usuario (no bloquea el stream)
-    ctx.waitUntil(saveMessage(env, conversationId, "user", lastUserMessage));
+    // Guardar mensaje del usuario con metadata (no bloquea el stream)
+    ctx.waitUntil(
+      saveMessage(env, conversationId, "user", lastUserMessage, {
+        detectedIntent: intent,
+        detectedEmotion: emotion,
+        priority,
+        ticketCreated,
+      }),
+    );
 
     // 🔥 AQUI METEMOS TODO (prompt + knowledge)
     if (!messages.some((msg) => msg.role === "system")) {

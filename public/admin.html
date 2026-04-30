@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amealcom · Panel Interno</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --verde: #94c11e;
+      --azul: #0d234b;
+      --blanco: #ffffff;
+      --gris-claro: #f4f4f4;
+      --gris-borde: #e0e0e0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--gris-claro);
+      color: #333;
+      min-height: 100vh;
+    }
+
+    /* ── Login overlay ── */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(13, 35, 75, 0.88);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .login-card {
+      background: var(--blanco);
+      border-radius: 12px;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      text-align: center;
+    }
+
+    .login-logo {
+      width: 48px;
+      height: 48px;
+      background: var(--azul);
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+      font-size: 1.4rem;
+    }
+
+    .login-card h2 {
+      color: var(--azul);
+      font-size: 1.35rem;
+      margin-bottom: 0.3rem;
+    }
+
+    .login-card p {
+      color: #777;
+      font-size: 0.875rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .login-card input[type="password"] {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      border: 1.5px solid var(--gris-borde);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.18s;
+      margin-bottom: 0.85rem;
+    }
+
+    .login-card input[type="password"]:focus { border-color: var(--azul); }
+
+    .btn-primary {
+      width: 100%;
+      padding: 0.72rem;
+      background: var(--verde);
+      color: var(--blanco);
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: opacity 0.18s;
+    }
+
+    .btn-primary:hover { opacity: 0.88; }
+
+    .login-error {
+      color: #e53935;
+      font-size: 0.82rem;
+      margin-top: 0.65rem;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--azul);
+      color: var(--blanco);
+      padding: 0.9rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+    }
+
+    .header-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      flex: 1;
+      white-space: nowrap;
+    }
+
+    .badge-internal {
+      background: rgba(255, 255, 255, 0.18);
+      padding: 0.18rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .header-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+
+    .btn-header {
+      padding: 0.38rem 0.85rem;
+      border-radius: 6px;
+      border: 1.5px solid rgba(255, 255, 255, 0.45);
+      background: transparent;
+      color: var(--blanco);
+      font-size: 0.82rem;
+      font-family: inherit;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.18s;
+    }
+
+    .btn-header:hover { background: rgba(255, 255, 255, 0.14); }
+
+    /* ── Warning bar ── */
+    .warning-bar {
+      background: #fff8e1;
+      border-bottom: 1px solid #ffe082;
+      padding: 0.55rem 1.5rem;
+      font-size: 0.82rem;
+      color: #795548;
+    }
+
+    /* ── Tabs ── */
+    .tabs {
+      background: var(--blanco);
+      border-bottom: 2px solid var(--gris-borde);
+      padding: 0 1.5rem;
+      display: flex;
+    }
+
+    .tab {
+      padding: 0.8rem 1.2rem;
+      border: none;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      background: transparent;
+      font-size: 0.92rem;
+      font-weight: 500;
+      font-family: inherit;
+      color: #777;
+      cursor: pointer;
+      transition: color 0.18s, border-color 0.18s;
+    }
+
+    .tab.active {
+      color: var(--azul);
+      border-bottom-color: var(--verde);
+      font-weight: 600;
+    }
+
+    /* ── Content ── */
+    .content {
+      padding: 1.5rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* ── Table ── */
+    .table-wrapper {
+      overflow-x: auto;
+      background: var(--blanco);
+      border-radius: 10px;
+      border: 1px solid var(--gris-borde);
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 680px;
+    }
+
+    thead { background: var(--gris-claro); }
+
+    th {
+      padding: 0.7rem 1rem;
+      text-align: left;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 1.5px solid var(--gris-borde);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 0.7rem 1rem;
+      font-size: 0.875rem;
+      border-bottom: 1px solid var(--gris-borde);
+      vertical-align: middle;
+    }
+
+    tr:last-child > td { border-bottom: none; }
+    tbody tr:hover > td { background: #fafafa; }
+
+    /* ── Badge ── */
+    .badge {
+      display: inline-block;
+      padding: 0.18rem 0.52rem;
+      border-radius: 20px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      white-space: nowrap;
+      color: #fff;
+    }
+
+    /* ── Action button ── */
+    .btn-ver {
+      padding: 0.28rem 0.65rem;
+      background: var(--azul);
+      color: var(--blanco);
+      border: none;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-family: inherit;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.18s;
+    }
+
+    .btn-ver:hover { opacity: 0.82; }
+
+    /* ── Messages expanded row ── */
+    .messages-row td {
+      padding: 0;
+      background: #f8fafc;
+    }
+
+    .messages-container {
+      padding: 1rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .msg {
+      padding: 0.55rem 0.85rem;
+      border-radius: 8px;
+      max-width: 75%;
+    }
+
+    .msg-user {
+      background: #e8f4fd;
+      align-self: flex-end;
+    }
+
+    .msg-assistant {
+      background: var(--blanco);
+      border: 1px solid var(--gris-borde);
+      align-self: flex-start;
+    }
+
+    .msg-meta {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      margin-bottom: 0.2rem;
+    }
+
+    .msg-role {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--azul);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .msg-time {
+      font-size: 0.7rem;
+      color: #aaa;
+    }
+
+    .msg p {
+      font-size: 0.86rem;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* ── States ── */
+    .spinner-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.7rem;
+      padding: 3.5rem 1rem;
+      color: #888;
+      font-size: 0.9rem;
+    }
+
+    .spinner {
+      width: 22px;
+      height: 22px;
+      border: 3px solid var(--gris-borde);
+      border-top-color: var(--azul);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-wrap {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #666;
+    }
+
+    .error-wrap p { margin-bottom: 1rem; font-size: 0.9rem; }
+
+    .btn-retry {
+      padding: 0.45rem 1.1rem;
+      background: var(--azul);
+      color: var(--blanco);
+      border: none;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: opacity 0.18s;
+    }
+
+    .btn-retry:hover { opacity: 0.85; }
+
+    .empty-row td {
+      text-align: center;
+      padding: 3rem;
+      color: #aaa;
+      font-size: 0.875rem;
+    }
+
+    code {
+      font-family: 'Courier New', monospace;
+      font-size: 0.82rem;
+      background: var(--gris-claro);
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      color: #444;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 600px) {
+      header { padding: 0.75rem 1rem; gap: 0.5rem; }
+      .header-title { font-size: 0.95rem; }
+      .content { padding: 1rem; }
+      .tabs { padding: 0 1rem; }
+      .warning-bar { padding: 0.5rem 1rem; }
+      .msg { max-width: 90%; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ Overlay de login ══ -->
+<div id="overlay-login" class="overlay">
+  <div class="login-card">
+    <div class="login-logo">🔐</div>
+    <h2>Panel Interno</h2>
+    <p>Amealcom · Acceso restringido</p>
+    <input type="password" id="input-password" placeholder="Contraseña de administrador" autocomplete="current-password">
+    <button class="btn-primary" id="btn-login">Entrar</button>
+    <p id="login-error" class="login-error hidden">Contraseña incorrecta. Intenta nuevamente.</p>
+  </div>
+</div>
+
+<!-- ══ App principal ══ -->
+<div id="app" class="hidden">
+
+  <header>
+    <span class="header-title">Amealcom · Panel Interno</span>
+    <span class="badge-internal">Solo uso interno</span>
+    <div class="header-actions">
+      <button class="btn-header" id="btn-refresh">Actualizar datos</button>
+      <button class="btn-header" id="btn-logout">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <div class="warning-bar">
+    ⚠️ La detección emocional es aproximada y no representa un diagnóstico psicológico.
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tab-conv">Conversaciones</button>
+    <button class="tab" id="tab-tick">Tickets</button>
+  </div>
+
+  <div class="content">
+
+    <!-- Panel Conversaciones -->
+    <div id="panel-conv">
+      <div id="conv-loading" class="spinner-wrap">
+        <div class="spinner"></div>
+        <span>Cargando conversaciones…</span>
+      </div>
+      <div id="conv-error" class="error-wrap hidden">
+        <p>No se pudieron cargar las conversaciones.</p>
+        <button class="btn-retry" id="btn-retry-conv">Reintentar</button>
+      </div>
+      <div id="conv-content" class="table-wrapper hidden">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha / Hora</th>
+              <th>Último mensaje</th>
+              <th>Intención</th>
+              <th>Emoción</th>
+              <th>Prioridad</th>
+              <th>Ticket</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="conv-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Panel Tickets -->
+    <div id="panel-tick" class="hidden">
+      <div id="tick-loading" class="spinner-wrap">
+        <div class="spinner"></div>
+        <span>Cargando tickets…</span>
+      </div>
+      <div id="tick-error" class="error-wrap hidden">
+        <p>No se pudieron cargar los tickets.</p>
+        <button class="btn-retry" id="btn-retry-tick">Reintentar</button>
+      </div>
+      <div id="tick-content" class="table-wrapper hidden">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha / Hora</th>
+              <th>ID</th>
+              <th>Intención</th>
+              <th>Emoción</th>
+              <th>Prioridad</th>
+              <th>Estado</th>
+              <th>Descripción</th>
+            </tr>
+          </thead>
+          <tbody id="tick-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  'use strict';
+
+  // ── Estado ──────────────────────────────────────────────────────────────
+  let authToken = sessionStorage.getItem('admin_token') || '';
+  let conversationsData = [];
+  let ticketsData = [];
+
+  // ── Utilidades ──────────────────────────────────────────────────────────
+  function $(id) { return document.getElementById(id); }
+
+  function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function truncate(str, len) {
+    if (!str) return '';
+    return str.length > len ? str.slice(0, len) + '…' : str;
+  }
+
+  function formatDate(iso) {
+    try {
+      return new Date(iso).toLocaleString('es-MX', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', hour12: false,
+      });
+    } catch { return iso || ''; }
+  }
+
+  function badge(text, color) {
+    return '<span class="badge" style="background:' + color + '">' + escapeHtml(text) + '</span>';
+  }
+
+  function emotionBadge(e) {
+    const c = { neutral: '#9e9e9e', frustrado: '#ff9800', enojado: '#f44336', triste: '#2196f3' };
+    return badge(e, c[e] || '#9e9e9e');
+  }
+
+  function priorityBadge(p) {
+    const c = { baja: '#94c11e', media: '#ff9800', alta: '#f44336' };
+    return badge(p, c[p] || '#9e9e9e');
+  }
+
+  function statusBadge(s) {
+    const c = { abierto: '#f44336', en_proceso: '#ff9800', cerrado: '#94c11e' };
+    return badge(s, c[s] || '#9e9e9e');
+  }
+
+  function intentBadge(i) {
+    return badge(i, 'var(--azul)');
+  }
+
+  // ── Flujo de autenticación ───────────────────────────────────────────────
+  function showLogin() {
+    $('overlay-login').classList.remove('hidden');
+    $('app').classList.add('hidden');
+    $('input-password').value = '';
+    $('login-error').classList.add('hidden');
+  }
+
+  function showApp() {
+    $('overlay-login').classList.add('hidden');
+    $('app').classList.remove('hidden');
+  }
+
+  async function submitLogin() {
+    const password = $('input-password').value;
+    if (!password) return;
+    $('login-error').classList.add('hidden');
+
+    authToken = password;
+    showApp();
+    setLoadingState(true);
+
+    const ok = await fetchData();
+    if (!ok) {
+      authToken = '';
+      sessionStorage.removeItem('admin_token');
+      showLogin();
+      $('login-error').classList.remove('hidden');
+    } else {
+      sessionStorage.setItem('admin_token', password);
+    }
+  }
+
+  function logout() {
+    sessionStorage.removeItem('admin_token');
+    authToken = '';
+    conversationsData = [];
+    ticketsData = [];
+    showLogin();
+  }
+
+  // ── Fetch ────────────────────────────────────────────────────────────────
+  async function fetchData() {
+    const headers = { 'Authorization': 'Bearer ' + authToken };
+    try {
+      const [convRes, tickRes] = await Promise.all([
+        fetch('/api/admin/conversations', { headers }),
+        fetch('/api/admin/tickets', { headers }),
+      ]);
+
+      if (convRes.status === 401 || tickRes.status === 401) {
+        sessionStorage.removeItem('admin_token');
+        return false;
+      }
+
+      if (!convRes.ok || !tickRes.ok) throw new Error('server');
+
+      conversationsData = await convRes.json();
+      ticketsData = await tickRes.json();
+
+      renderConversations();
+      renderTickets();
+      return true;
+    } catch {
+      showErrorState();
+      return false;
+    }
+  }
+
+  async function refreshData() {
+    setLoadingState(true);
+    const ok = await fetchData();
+    if (!ok && !authToken) showLogin();
+  }
+
+  // ── Estados de UI ────────────────────────────────────────────────────────
+  function setLoadingState(on) {
+    ['conv-loading', 'tick-loading'].forEach(id => $( id).classList.toggle('hidden', !on));
+    ['conv-error', 'tick-error', 'conv-content', 'tick-content'].forEach(id =>
+      $(id).classList.add('hidden')
+    );
+  }
+
+  function showErrorState() {
+    ['conv-loading', 'tick-loading', 'conv-content', 'tick-content'].forEach(id =>
+      $(id).classList.add('hidden')
+    );
+    ['conv-error', 'tick-error'].forEach(id => $(id).classList.remove('hidden'));
+  }
+
+  // ── Tabs ─────────────────────────────────────────────────────────────────
+  function switchTab(tab) {
+    const isConv = tab === 'conv';
+    $('panel-conv').classList.toggle('hidden', !isConv);
+    $('panel-tick').classList.toggle('hidden', isConv);
+    $('tab-conv').classList.toggle('active', isConv);
+    $('tab-tick').classList.toggle('active', !isConv);
+  }
+
+  // ── Renderizado: Conversaciones ──────────────────────────────────────────
+  function renderConversations() {
+    $('conv-loading').classList.add('hidden');
+    $('conv-error').classList.add('hidden');
+    $('conv-content').classList.remove('hidden');
+
+    const tbody = $('conv-body');
+    tbody.innerHTML = '';
+
+    if (!conversationsData.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No hay conversaciones registradas.</td></tr>';
+      return;
+    }
+
+    conversationsData.forEach(function(conv) {
+      // Fila principal
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td style="white-space:nowrap">' + escapeHtml(formatDate(conv.createdAt)) + '</td>' +
+        '<td style="max-width:200px" title="' + escapeHtml(conv.lastMessage) + '">' +
+          escapeHtml(truncate(conv.lastMessage, 60)) +
+        '</td>' +
+        '<td>' + intentBadge(conv.detectedIntent) + '</td>' +
+        '<td>' + emotionBadge(conv.detectedEmotion) + '</td>' +
+        '<td>' + priorityBadge(conv.priority) + '</td>' +
+        '<td style="text-align:center">' + (conv.hasTicket ? '✅' : '—') + '</td>' +
+        '<td><button class="btn-ver">Ver mensajes (' + (conv.messageCount || 0) + ')</button></td>';
+      tbody.appendChild(tr);
+
+      // Fila expandible de mensajes
+      const trMsg = document.createElement('tr');
+      trMsg.classList.add('messages-row', 'hidden');
+      trMsg.id = 'msgs-' + conv.id;
+
+      const msgs = Array.isArray(conv.messages) ? conv.messages : [];
+      const msgsHtml = msgs.length
+        ? msgs.map(function(m) {
+            return '<div class="msg msg-' + escapeHtml(m.role) + '">' +
+              '<div class="msg-meta">' +
+                '<span class="msg-role">' + (m.role === 'user' ? 'Usuario' : 'Bot') + '</span>' +
+                '<span class="msg-time">' + escapeHtml(formatDate(m.createdAt)) + '</span>' +
+              '</div>' +
+              '<p>' + escapeHtml(m.content) + '</p>' +
+            '</div>';
+          }).join('')
+        : '<p style="color:#aaa;font-size:0.85rem">Sin mensajes registrados.</p>';
+
+      trMsg.innerHTML = '<td colspan="7"><div class="messages-container">' + msgsHtml + '</div></td>';
+      tbody.appendChild(trMsg);
+
+      // Botón "Ver mensajes"
+      const btn = tr.querySelector('.btn-ver');
+      btn.addEventListener('click', function() {
+        const row = $('msgs-' + conv.id);
+        const open = row.classList.toggle('hidden');
+        btn.textContent = open
+          ? 'Ver mensajes (' + (conv.messageCount || 0) + ')'
+          : 'Cerrar';
+      });
+    });
+  }
+
+  // ── Renderizado: Tickets ─────────────────────────────────────────────────
+  function renderTickets() {
+    $('tick-loading').classList.add('hidden');
+    $('tick-error').classList.add('hidden');
+    $('tick-content').classList.remove('hidden');
+
+    const tbody = $('tick-body');
+    tbody.innerHTML = '';
+
+    if (!ticketsData.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No hay tickets registrados.</td></tr>';
+      return;
+    }
+
+    ticketsData.forEach(function(ticket) {
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td style="white-space:nowrap">' + escapeHtml(formatDate(ticket.createdAt)) + '</td>' +
+        '<td><code>' + escapeHtml((ticket.id || '').slice(0, 8)) + '</code></td>' +
+        '<td>' + intentBadge(ticket.intent) + '</td>' +
+        '<td>' + emotionBadge(ticket.emotion) + '</td>' +
+        '<td>' + priorityBadge(ticket.priority) + '</td>' +
+        '<td>' + statusBadge(ticket.status) + '</td>' +
+        '<td title="' + escapeHtml(ticket.description) + '">' +
+          escapeHtml(truncate(ticket.description, 80)) +
+        '</td>';
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ── Event listeners ──────────────────────────────────────────────────────
+  $('btn-login').addEventListener('click', submitLogin);
+  $('input-password').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') submitLogin();
+  });
+  $('btn-logout').addEventListener('click', logout);
+  $('btn-refresh').addEventListener('click', refreshData);
+  $('tab-conv').addEventListener('click', function() { switchTab('conv'); });
+  $('tab-tick').addEventListener('click', function() { switchTab('tick'); });
+  $('btn-retry-conv').addEventListener('click', refreshData);
+  $('btn-retry-tick').addEventListener('click', refreshData);
+
+  // ── Arranque ─────────────────────────────────────────────────────────────
+  (async function init() {
+    if (authToken) {
+      showApp();
+      setLoadingState(true);
+      const ok = await fetchData();
+      if (!ok) {
+        sessionStorage.removeItem('admin_token');
+        authToken = '';
+        showLogin();
+      }
+    } else {
+      showLogin();
+    }
+  })();
+</script>
+</body>
+</html>
