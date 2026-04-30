@@ -47,10 +47,12 @@ Si alguien reporta una falla, pide:
 Si no tienes suficiente información, pide los datos necesarios o indica que un asesor de Amealcom puede darle seguimiento.
 `;
 
-const UNAUTHORIZED = new Response(JSON.stringify({ error: "No autorizado" }), {
-  status: 401,
-  headers: { "content-type": "application/json" },
-});
+function unauthorized(): Response {
+  return new Response(JSON.stringify({ error: "No autorizado" }), {
+    status: 401,
+    headers: { "content-type": "application/json" },
+  });
+}
 
 export default {
   async fetch(
@@ -62,7 +64,7 @@ export default {
 
     // Admin API (protegida — va antes del bloque de assets)
     if (url.pathname.startsWith("/api/admin/")) {
-      if (!isAuthorized(request, env)) return UNAUTHORIZED.clone();
+      if (!isAuthorized(request, env)) return unauthorized();
       return handleAdminRequest(request, url);
     }
 
