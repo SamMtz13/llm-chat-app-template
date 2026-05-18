@@ -426,6 +426,7 @@
   <div class="tabs">
     <button class="tab active" id="tab-conv">Conversaciones</button>
     <button class="tab" id="tab-tick">Tickets</button>
+    <button class="tab" id="tab-lead">Leads</button>
   </div>
 
   <div class="content">
@@ -486,6 +487,33 @@
       </div>
     </div>
 
+    <!-- Panel Leads -->
+    <div id="panel-lead" class="hidden">
+      <div id="lead-loading" class="spinner-wrap">
+        <div class="spinner"></div>
+        <span>Cargando leads…</span>
+      </div>
+      <div id="lead-error" class="error-wrap hidden">
+        <p>No se pudieron cargar los leads.</p>
+        <button class="btn-retry" id="btn-retry-lead">Reintentar</button>
+      </div>
+      <div id="lead-content" class="table-wrapper hidden">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha / Hora</th>
+              <th>Nombre</th>
+              <th>Teléfono</th>
+              <th>Colonia / Zona</th>
+              <th>Servicio de interés</th>
+              <th>ID conversación</th>
+            </tr>
+          </thead>
+          <tbody id="lead-body"></tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -496,6 +524,7 @@
   let authToken = sessionStorage.getItem('admin_token') || '';
   let conversationsData = [];
   let ticketsData = [];
+  let leadsData = [];
 
   // ── Utilidades ──────────────────────────────────────────────────────────
   function $(id) { return document.getElementById(id); }
@@ -585,6 +614,7 @@
     authToken = '';
     conversationsData = [];
     ticketsData = [];
+    leadsData = [];
     showLogin();
   }
 
@@ -592,23 +622,26 @@
   async function fetchData() {
     const headers = { 'Authorization': 'Bearer ' + authToken };
     try {
-      const [convRes, tickRes] = await Promise.all([
+      const [convRes, tickRes, leadRes] = await Promise.all([
         fetch('/api/admin/conversations', { headers }),
         fetch('/api/admin/tickets', { headers }),
+        fetch('/api/admin/leads', { headers }),
       ]);
 
-      if (convRes.status === 401 || tickRes.status === 401) {
+      if (convRes.status === 401 || tickRes.status === 401 || leadRes.status === 401) {
         sessionStorage.removeItem('admin_token');
         return false;
       }
 
-      if (!convRes.ok || !tickRes.ok) throw new Error('server');
+      if (!convRes.ok || !tickRes.ok || !leadRes.ok) throw new Error('server');
 
       conversationsData = await convRes.json();
       ticketsData = await tickRes.json();
+      leadsData = await leadRes.json();
 
       renderConversations();
       renderTickets();
+      renderLeads();
       return true;
     } catch {
       showErrorState();
@@ -624,26 +657,25 @@
 
   // ── Estados de UI ────────────────────────────────────────────────────────
   function setLoadingState(on) {
-    ['conv-loading', 'tick-loading'].forEach(id => $( id).classList.toggle('hidden', !on));
-    ['conv-error', 'tick-error', 'conv-content', 'tick-content'].forEach(id =>
+    ['conv-loading', 'tick-loading', 'lead-loading'].forEach(id => $(id).classList.toggle('hidden', !on));
+    ['conv-error', 'tick-error', 'lead-error', 'conv-content', 'tick-content', 'lead-content'].forEach(id =>
       $(id).classList.add('hidden')
     );
   }
 
   function showErrorState() {
-    ['conv-loading', 'tick-loading', 'conv-content', 'tick-content'].forEach(id =>
+    ['conv-loading', 'tick-loading', 'lead-loading', 'conv-content', 'tick-content', 'lead-content'].forEach(id =>
       $(id).classList.add('hidden')
     );
-    ['conv-error', 'tick-error'].forEach(id => $(id).classList.remove('hidden'));
+    ['conv-error', 'tick-error', 'lead-error'].forEach(id => $(id).classList.remove('hidden'));
   }
 
   // ── Tabs ─────────────────────────────────────────────────────────────────
   function switchTab(tab) {
-    const isConv = tab === 'conv';
-    $('panel-conv').classList.toggle('hidden', !isConv);
-    $('panel-tick').classList.toggle('hidden', isConv);
-    $('tab-conv').classList.toggle('active', isConv);
-    $('tab-tick').classList.toggle('active', !isConv);
+    ['conv', 'tick', 'lead'].forEach(function(t) {
+      $('panel-' + t).classList.toggle('hidden', t !== tab);
+      $('tab-' + t).classList.toggle('active', t === tab);
+    });
   }
 
   // ── Renderizado: Conversaciones ──────────────────────────────────────────
@@ -738,6 +770,33 @@
     });
   }
 
+  // ── Renderizado: Leads ───────────────────────────────────────────────────
+  function renderLeads() {
+    $('lead-loading').classList.add('hidden');
+    $('lead-error').classList.add('hidden');
+    $('lead-content').classList.remove('hidden');
+
+    const tbody = $('lead-body');
+    tbody.innerHTML = '';
+
+    if (!leadsData.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No hay leads registrados.</td></tr>';
+      return;
+    }
+
+    leadsData.forEach(function(lead) {
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td style="white-space:nowrap">' + escapeHtml(formatDate(lead.fechaHora)) + '</td>' +
+        '<td>' + escapeHtml(lead.nombre) + '</td>' +
+        '<td>' + escapeHtml(lead.telefono) + '</td>' +
+        '<td>' + escapeHtml(lead.colonia) + '</td>' +
+        '<td>' + escapeHtml(lead.tipoServicio) + '</td>' +
+        '<td><code>' + escapeHtml((lead.conversationId || '').slice(0, 8)) + '</code></td>';
+      tbody.appendChild(tr);
+    });
+  }
+
   // ── Event listeners ──────────────────────────────────────────────────────
   $('btn-login').addEventListener('click', submitLogin);
   $('input-password').addEventListener('keydown', function(e) {
@@ -747,8 +806,10 @@
   $('btn-refresh').addEventListener('click', refreshData);
   $('tab-conv').addEventListener('click', function() { switchTab('conv'); });
   $('tab-tick').addEventListener('click', function() { switchTab('tick'); });
+  $('tab-lead').addEventListener('click', function() { switchTab('lead'); });
   $('btn-retry-conv').addEventListener('click', refreshData);
   $('btn-retry-tick').addEventListener('click', refreshData);
+  $('btn-retry-lead').addEventListener('click', refreshData);
 
   // ── Arranque ─────────────────────────────────────────────────────────────
   (async function init() {

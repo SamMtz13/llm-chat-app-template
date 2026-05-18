@@ -38,3 +38,16 @@ CREATE TABLE IF NOT EXISTS tickets (
 
 CREATE INDEX IF NOT EXISTS idx_tickets_conversation_id ON tickets (conversation_id);
 CREATE INDEX IF NOT EXISTS idx_tickets_created_at ON tickets (created_at);
+
+CREATE TABLE IF NOT EXISTS leads (
+  id              TEXT PRIMARY KEY,
+  conversation_id TEXT NOT NULL,
+  nombre          TEXT,
+  telefono        TEXT,
+  colonia         TEXT,
+  tipo_servicio   TEXT,
+  created_at      TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_leads_conversation_id ON leads (conversation_id);
+CREATE INDEX IF NOT EXISTS idx_leads_created_at ON leads (created_at);

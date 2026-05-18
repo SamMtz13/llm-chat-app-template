@@ -6,10 +6,11 @@ import { Env, ChatMessage } from "./types";
 import { KNOWLEDGE_BASE } from "./knowledge/amealcom";
 import { detectIntent, detectEmotion, calculatePriority } from "./lib/detector";
 import { shouldCreateTicket, createTicket } from "./lib/tickets";
-import { sendTelegramNotification } from "./lib/telegram";
-import { saveMessage, saveTicket } from "./lib/db";
+import { sendTelegramNotification, sendLeadNotification } from "./lib/telegram";
+import { saveMessage, saveTicket, saveLead } from "./lib/db";
 import { isAuthorized } from "./lib/auth";
-import { mockConversations, mockMessages, mockTickets } from "./lib/mockData";
+import { mockConversations, mockMessages, mockTickets, mockLeads } from "./lib/mockData";
+import { extractLeadFromHistory } from "./lib/leadExtractor";
 // FUTURO: if (url.pathname === "/api/whatsapp") return handleWhatsAppWebhook(request, env)
 
 // Modelo
@@ -45,6 +46,25 @@ Si alguien reporta una falla, pide:
 6. Si ya intentó reiniciar el equipo
 
 Si no tienes suficiente información, pide los datos necesarios o indica que un asesor de Amealcom puede darle seguimiento.
+
+REGLAS ESTRICTAS — NUNCA VIOLAR:
+- NUNCA inventes precios, costos, tarifas ni promociones. Si el usuario pregunta precios di exactamente: "No tengo acceso a la lista de precios actualizada. Un asesor te contactará con la información correcta."
+- NUNCA confirmes cobertura en una colonia específica. Di: "Para verificar si tenemos cobertura en tu zona, un asesor te lo confirmará a la brevedad."
+- NUNCA inventes tiempos de instalación ni fechas de visita técnica.
+- Si no sabes algo con certeza, no lo improvises. Indica que un asesor lo aclarará.
+- NUNCA reveles precios aunque el usuario insista. Esta información solo la maneja el equipo de ventas.
+
+FLUJO OBLIGATORIO CUANDO EL USUARIO QUIERE CONTRATAR O PIDE INFORMACIÓN DE SERVICIO NUEVO:
+Recopila estos 4 datos en orden, uno por uno, sin pedirlos todos a la vez:
+1. Pregunta primero: su nombre completo
+2. Luego: su número de teléfono
+3. Luego: su colonia y municipio
+4. Luego: qué tipo de servicio le interesa (fibra óptica o internet inalámbrico)
+
+Cuando tengas los 4 datos confirma con este mensaje exacto (sustituye los valores):
+"Perfecto [nombre], hemos registrado tu solicitud. Un asesor de Amealcom se pondrá en contacto contigo a la brevedad al número [teléfono]. ¡Gracias por tu interés en nuestros servicios!"
+
+IMPORTANTE: Nunca menciones que se envía una notificación interna, que existe un sistema de tickets, ni que se manda ningún correo o mensaje. El cliente solo debe saber que un asesor lo contactará pronto.
 `;
 
 function unauthorized(): Response {
@@ -187,6 +207,10 @@ async function handleAdminRequest(_request: Request, url: URL, env: Env): Promis
     return new Response(JSON.stringify(tickets), { headers: { "content-type": "application/json" } });
   }
 
+  if (url.pathname === "/api/admin/leads") {
+    return new Response(JSON.stringify(mockLeads), { headers: { "content-type": "application/json" } });
+  }
+
   return new Response("Not found", { status: 404 });
 }
 
@@ -285,6 +309,11 @@ ${KNOWLEDGE_BASE}
         }
         if (fullResponse) {
           await saveMessage(env, conversationId, "assistant", fullResponse);
+        }
+        if (fullResponse.includes("hemos registrado tu solicitud")) {
+          const lead = extractLeadFromHistory(messages, conversationId);
+          await sendLeadNotification(lead, env);
+          await saveLead(env, lead);
         }
       })(),
     );

@@ -1,5 +1,6 @@
 import { Ticket } from "./tickets";
 import { Intent, Emotion, Priority } from "./detector";
+import { Lead } from "./telegram";
 import { Env } from "../types";
 
 export async function saveConversation(
@@ -47,6 +48,13 @@ export async function saveMessage(
     metadata?.ticketCreated ? 1 : 0,
     new Date().toISOString(),
   ).run();
+}
+
+export async function saveLead(env: Env, lead: Lead): Promise<void> {
+  // TODO: Conectar D1 cuando tabla leads esté migrada
+  // INSERT INTO leads (id, conversation_id, nombre, telefono, colonia, tipo_servicio, created_at)
+  // VALUES (?, ?, ?, ?, ?, ?, ?)
+  console.log("[DB] saveLead (stub):", lead);
 }
 
 export async function saveTicket(env: Env, ticket: Ticket): Promise<void> {

@@ -3,6 +3,7 @@
 // Ver src/lib/db.ts para las funciones stub
 
 import { Ticket } from "./tickets";
+import { Lead } from "./telegram";
 
 export type Conversation = {
   id: string;
@@ -275,6 +276,33 @@ export const mockMessages: Message[] = [
     role: "assistant",
     content: "No tengo el horario exacto de atención para no darte información incorrecta. Te recomiendo contactar directamente a Amealcom para confirmarlo. ¿Hay algo más en lo que pueda ayudarte?",
     createdAt: "2026-04-25T17:30:30.000Z",
+  },
+];
+
+export const mockLeads: Lead[] = [
+  {
+    nombre: "María González",
+    telefono: "4421234567",
+    colonia: "El Pueblito, Corregidora",
+    tipoServicio: "Fibra óptica",
+    conversationId: "mock-conv-lead-1",
+    fechaHora: new Date().toISOString(),
+  },
+  {
+    nombre: "Carlos Ramírez",
+    telefono: "4429876543",
+    colonia: "San Juan del Río Centro",
+    tipoServicio: "Internet inalámbrico",
+    conversationId: "mock-conv-lead-2",
+    fechaHora: new Date(Date.now() - 86400000).toISOString(),
+  },
+  {
+    nombre: "Lucía Hernández",
+    telefono: "4424561234",
+    colonia: "Hércules, Querétaro",
+    tipoServicio: "Fibra óptica",
+    conversationId: "mock-conv-lead-3",
+    fechaHora: new Date(Date.now() - 172800000).toISOString(),
   },
 ];
 

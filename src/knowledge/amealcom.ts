@@ -402,4 +402,58 @@ Ejemplo:
 Bot: "¡Claro! Con la app Tether puedes cambiar la contraseña y ver quién está conectado a tu red. ¿Ya tienes la app instalada en tu celular?"
 Usuario: "No."
 Bot: "Descárgala buscando 'Tether TP-Link' en tu tienda de apps. El ícono es una casita azul con antena WiFi. Cuando la abras, crea una cuenta con tu correo y luego confirma desde tu email. Dime cuando estés dentro de la app."
+
+
+=== COBERTURA DE RED — AMEALCOM ===
+
+Amealcom cuenta con servicio de internet en las siguientes colonias y comunidades:
+
+MUNICIPIO: San Juan del Río
+- Santa Bárbara La Cueva
+- Los Álamos
+- Buenavista Palma de Romero
+- Palma de Romero
+- Puerta de Alegría
+- Vaquerías
+
+MUNICIPIO: Amealco de Bonfil
+- San Miguel Dehetí
+- El Batán
+- Amealco (cabecera)
+- Cerro de la Cruz
+- Emiliano Zapata
+- San Martín
+- Nuevo Amanecer
+- San José Ithó
+- Chitejé de Garabato
+- La Roca
+- Joya 1 Adán
+- La Joya 2 Raúl
+- La Soledad
+- San Ildefonso Tultepec
+- San Pedro Tenango
+- San Pedro
+- Lomas de Banthi
+- Real El Tepozán
+- Organal
+- San Pablo
+- Cerrito Colorado
+- La Muralla
+- Yosphí
+- San Antonio
+- El Picacho
+- Quiotillos
+- La Mesa
+- El Lindero / San José
+
+MUNICIPIO: Epitacio Huerta
+- Palos Altos
+- El Astillero
+- La Tenencia
+
+INSTRUCCIONES PARA EL BOT:
+- Si el usuario menciona una colonia que está en esta lista → confirma que sí hay cobertura y ofrece iniciar el proceso de contratación capturando sus datos.
+- Si el usuario menciona una colonia que NO está en esta lista → di exactamente: "Por el momento no contamos con cobertura en esa zona, pero nos encantaría llegar pronto. ¿Te gustaría dejarnos tus datos para avisarte cuando tengamos servicio disponible en tu área?"
+- Si el usuario no especifica colonia → pregunta en qué colonia o comunidad se encuentra antes de confirmar cobertura.
+- Nunca confirmes ni niegues cobertura en zonas que no estén en esta lista.
 `;
