@@ -410,11 +410,11 @@ Amealcom cuenta con servicio de internet en las siguientes colonias y comunidade
 
 MUNICIPIO: San Juan del Río
 - Santa Bárbara La Cueva
-- Los Álamos
 - Buenavista Palma de Romero
 - Palma de Romero
 - Puerta de Alegría
 - Vaquerías
+- La Mesa (San Juan del Río)
 
 MUNICIPIO: Amealco de Bonfil
 - San Miguel Dehetí
@@ -425,17 +425,15 @@ MUNICIPIO: Amealco de Bonfil
 - San Martín
 - Nuevo Amanecer
 - San José Ithó
-- Chitejé de Garabato
+- Chitejé de la Cruz
 - La Roca
 - Joya 1 Adán
 - La Joya 2 Raúl
 - La Soledad
 - San Ildefonso Tultepec
 - San Pedro Tenango
-- San Pedro
 - Lomas de Banthi
 - Real El Tepozán
-- Organal
 - San Pablo
 - Cerrito Colorado
 - La Muralla
@@ -443,8 +441,9 @@ MUNICIPIO: Amealco de Bonfil
 - San Antonio
 - El Picacho
 - Quiotillos
-- La Mesa
+- La Mesa (Amealco de Bonfil)
 - El Lindero / San José
+- Laguna del Servin
 
 MUNICIPIO: Epitacio Huerta
 - Palos Altos
